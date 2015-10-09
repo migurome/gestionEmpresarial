@@ -25,11 +25,13 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 	int n=0;
 	
 	buf = getc(origin);
+
 	while ((n < nBytes) && (buf != EOF)){
 		putc(buf, destination);
 		n++;
 		buf = getc(origin);
 	}
+
 	fseek(origin, -1, SEEK_CUR);
 	
 	return n;
@@ -52,12 +54,14 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 int
 loadstr(FILE * file, char **buf) //**buf es un paso por referencia
 {
-	int n, size=0;
+	int n = 0, size = 0;
 
 	do{
 		n = getc(file);
 		size++;
 	}while((n!=(int)'\0') && (n != EOF));
+
+	printf("%d",size);
 
 	if(n==EOF){
 		return -1;
@@ -89,11 +93,13 @@ loadstr(FILE * file, char **buf) //**buf es un paso por referencia
 int
 readHeader(FILE * tarFile, stHeaderEntry ** header, int *nFiles)
 {
-	int i, n=0;
-	char c;
+	int i;
 	stHeaderEntry* p;
 	
 	*nFiles = leerNum(tarFile);
+
+	printf("%s","El numero de ficheros es: ");
+	printf("%d\n", *nFiles);
 	
 	p = (stHeaderEntry*)malloc((*nFiles)*sizeof(stHeaderEntry));
 	*header = p;
@@ -142,19 +148,12 @@ createTar(int nFiles, char *fileNames[], char tarName[])
 	}
 
 	//AVANZAR CURSOR HASTA DEJAR ESPACIO PARA EL HEADER
-	//sprintf(num, "%d", nFiles);
-	fseek(tarFile, sizeof(int)+1, SEEK_SET); //Dejamos espacio para nFiles
+	sprintf(num, "%d", nFiles);
+	fseek(tarFile, strlen(num)+1, SEEK_SET); //Dejamos espacio para nFiles
 	for(i = 0; i < nFiles; i++){ //Dejamos espacio para el nombre y el entero del tamaño
-		//sprintf(num, "%d", header[i].size); 
-		/*
-			Al reservar espacio para header.size al principio (antes de leer el archivo) el tamaño es 0, una cifra, y al pasarlo a cadena 
-			queda una cadena de un caracter porque el tamaño es 0, pero luego al leerlo y poner un tamaño de fichero mayor de 1 cifra de bytes
-			y escribimos posteriomente el header escribe esas X cifras en el espacio que solo se reservo para una
-			
-			Solucion: escribir enteros en vez de cadenas
-		*/
-		fseek(tarFile, strlen(header[i].name)+1, SEEK_CUR);
-		fseek(tarFile, sizeof(int)+1, SEEK_CUR); //+2 POR LOS DOS '\0' TANTO DEL NOMBRE COMO DEL TAMAÑO
+		sprintf(num, "%d", header[i].size);
+		fseek(tarFile, strlen(header[i].name)+1 , SEEK_CUR);
+		fseek(tarFile, strlen(num)+2, SEEK_CUR); //+2 POR LOS DOS '\0' TANTO DEL NOMBRE COMO DEL TAMAÑO
 	}
 	
 
@@ -179,16 +178,14 @@ createTar(int nFiles, char *fileNames[], char tarName[])
 	rewind(tarFile);
 
 	//ESCRIBIMOS EL HEADER
-	fwrite(&nFiles, sizeof(int),1,  tarFile);//PORQUE ESTO NO VA
-	//sprintf(num, "%d", nFiles);//Escribimos el entero del tamaño
-	//fwrite(num,1,strlen(num),tarFile);
+	sprintf(num, "%d", nFiles);//Escribimos el entero del tamaño
+	fwrite(num,1,strlen(num),tarFile);
 	fputc('\0',tarFile);
 	for(i = 0; i < nFiles; i++){ //Dejamos espacio para el nombre y el entero del tamaño
 		fwrite(header[i].name, 1, strlen(header[i].name), tarFile);
 		fputc('\0',tarFile);
-		//sprintf(num, "%d", header[i].size);
-		//fwrite(num,1,strlen(num),tarFile);
-		fwrite(&header[i].size, sizeof(int),1,  tarFile);
+		sprintf(num, "%d", header[i].size);
+		fwrite(num,1,strlen(num),tarFile);
 		fputc('\0',tarFile);
 	}
 	
@@ -226,22 +223,22 @@ extractTar(char tarName[])
 		copynFile(tarFile, f, header[i].size);
 		fclose(f);
 	}
+
 	fclose(tarFile);
 	return 0;
 }
 
 int leerNum (FILE * f)
 {
-	int *n;
+	int n=0;
 	char c;
-	/*c = fgetc(f);
+	c = fgetc(f);
+
 	while(c!='\0')
 	{
-		n = n*10 + (int)c;
+		n = n*10 + (int)(c-48);
 		c = fgetc(f);
-	}*/
-	fread(&n, sizeof(int), 1, f);
-	fseek(f, 1, SEEK_CUR);
-	printf("%d\n", n);
-	return *n;
+	}
+	printf("%d\n",n);
+	return n;
 }
