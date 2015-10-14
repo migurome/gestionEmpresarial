@@ -12,5 +12,4 @@ compila.c:
 	gcc -c mytar_routines.c mytar.c
 
 clean: 
-	rm -f Ejemplo *.o
-	ls -ls
+	rm -f *.o

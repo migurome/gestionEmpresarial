@@ -22,16 +22,14 @@ int
 copynFile(FILE * origin, FILE * destination, int nBytes)
 {
 	char buf;
-	int n=0;
+	int n = 0;
 	
 	buf = getc(origin);
-
 	while ((n < nBytes) && (buf != EOF)){
 		putc(buf, destination);
 		n++;
 		buf = getc(origin);
 	}
-
 	fseek(origin, -1, SEEK_CUR);
 	
 	return n;
@@ -54,28 +52,26 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 int
 loadstr(FILE * file, char **buf) //**buf es un paso por referencia
 {
-	int n = 0, size = 0;
-
+	int n, size = 0;
+	
 	do{
 		n = getc(file);
 		size++;
 	}while((n!=(int)'\0') && (n != EOF));
 
-	printf("%d",size);
-
 	if(n==EOF){
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if((*buf = (char*)malloc(size))==NULL){
-		return -1;
+		return EXIT_FAILURE;
 	}
 	
 	fseek(file, -size, SEEK_CUR);
 
 	fread(*buf, 1, size, file);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 
@@ -93,23 +89,22 @@ loadstr(FILE * file, char **buf) //**buf es un paso por referencia
 int
 readHeader(FILE * tarFile, stHeaderEntry ** header, int *nFiles)
 {
-	int i;
+	int i, n=0;
+	char c;
 	stHeaderEntry* p;
-	
 	*nFiles = leerNum(tarFile);
-
-	printf("%s","El numero de ficheros es: ");
-	printf("%d\n", *nFiles);
+	if((p = (stHeaderEntry*)malloc((*nFiles)*sizeof(stHeaderEntry)))==NULL)
+		return EXIT_FAILURE;
 	
-	p = (stHeaderEntry*)malloc((*nFiles)*sizeof(stHeaderEntry));
-	*header = p;
-	
-	for(i = 0; i<*nFiles;++i){
-		loadstr(tarFile, &p[i].name);
+	for(i = 0; i<*nFiles; i++){
+		if(loadstr(tarFile, &p[i].name)==EXIT_FAILURE)
+			return EXIT_FAILURE;		
 		p[i].size = leerNum(tarFile);
 	}
 
-	return 0;
+	*header = p;
+	
+	return EXIT_SUCCESS;
 }
 
 /** Creates a tarball archive 
@@ -136,24 +131,78 @@ readHeader(FILE * tarFile, stHeaderEntry ** header, int *nFiles)
 int
 createTar(int nFiles, char *fileNames[], char tarName[])
 {
-	FILE *tarFile = fopen(tarName,"w");
+	
+	//Hay que obligarle a que el fichero sea .mtar
+
+	int j = strlen(tarName)-1, ok = 1, tam = 0;
+
+	while(j >= 0  && ok == 1)
+	{
+
+		switch (tam)
+		{
+			case 0:
+				if(tarName[j] != 'r')
+					ok = 0;
+				break;
+			case 1:
+				if(tarName[j] != 'a')
+					ok = 0;
+				break;
+			case 2:
+				if(tarName[j] != 't')
+					ok = 0;
+				break;
+			case 3:
+				if(tarName[j] != 'm')
+					ok = 0;
+				break; 
+			case 4:
+				if(tarName[j] != '.' || j == 0)
+					ok = 0;
+				break;
+		}
+		tam++;
+		j--;
+	}
+	
+	if(!ok){
+		printf("Incorrect file extension\n");
+		return EXIT_FAILURE;
+	}
+
+
+	FILE *tarFile = fopen(tarName,"w"), *f;
 	char num[100];
 	stHeaderEntry *header = (stHeaderEntry*)malloc(nFiles * sizeof(stHeaderEntry));		// Reservamos espacio para las cabeceras
-	int i, tam;
+	int i;
 	char caracter;
 
+
+	for(i = 0; i < nFiles; i++){								// Intentamos abrir todos los archivos metidos como parametros, en caso de que  
+		if((f=fopen(fileNames[i], "r"))==NULL){							// no exista alguno de ellos retornamos -1
+			printf("The file %s doesn't exist\n", fileNames[i]);
+			return EXIT_FAILURE;
+		}
+		else
+			fclose(f);
+	}	
+	
+
 	for(i = 0; i < nFiles; i++){								//Rellenamos las cabeceras
-		header[i].name = (char*)malloc(strlen(fileNames[i])); //+1 del barra 0 LO HE QUITADO PORQUE LUEGO HAY QUE AÑADIR EL \0 AL FINAL
+		if((header[i].name = (char*)malloc(strlen(fileNames[i]))) == NULL)	//+1 del barra 0 LO HE QUITADO PORQUE LUEGO HAY QUE AÑADIR EL \0 AL FINAL
+			return EXIT_FAILURE; 	
 		strcpy(header[i].name, fileNames[i]);					//Copiamos el valor de filenames a header[i]
 	}
 
+
+
+
 	//AVANZAR CURSOR HASTA DEJAR ESPACIO PARA EL HEADER
-	sprintf(num, "%d", nFiles);
-	fseek(tarFile, strlen(num)+1, SEEK_SET); //Dejamos espacio para nFiles
+	fseek(tarFile, sizeof(int)+1, SEEK_SET); //Dejamos espacio para nFiles
 	for(i = 0; i < nFiles; i++){ //Dejamos espacio para el nombre y el entero del tamaño
-		sprintf(num, "%d", header[i].size);
-		fseek(tarFile, strlen(header[i].name)+1 , SEEK_CUR);
-		fseek(tarFile, strlen(num)+2, SEEK_CUR); //+2 POR LOS DOS '\0' TANTO DEL NOMBRE COMO DEL TAMAÑO
+		fseek(tarFile, strlen(header[i].name)+1, SEEK_CUR);
+		fseek(tarFile, sizeof(int)+1, SEEK_CUR); //+2 POR LOS DOS '\0' TANTO DEL NOMBRE COMO DEL TAMAÑO
 	}
 	
 
@@ -162,33 +211,31 @@ createTar(int nFiles, char *fileNames[], char tarName[])
 	for(i = 0; i < nFiles; i++){ 		
 			
 		FILE *fichero = fopen(fileNames[i], "r"); 	
-		caracter = fgetc(fichero);							
-		tam = 0;
-		if(caracter != EOF){								
-			while(caracter != EOF){
-				fputc(caracter, tarFile);
-				caracter = fgetc(fichero);					
-				tam++;
-			}
-			header[i].size = tam;	
+		
+		caracter = fgetc(fichero);					
+		tam = 0;							
+		while(caracter != EOF){
+			fputc(caracter, tarFile);
+			caracter = fgetc(fichero);					
+			tam++;
 		}
+		header[i].size = tam;	
 		fclose(fichero);
 	}
 	//VOLVEMOS A PONER EL CURSOR AL COMIENZO
 	rewind(tarFile);
 
 	//ESCRIBIMOS EL HEADER
-	sprintf(num, "%d", nFiles);//Escribimos el entero del tamaño
-	fwrite(num,1,strlen(num),tarFile);
+	fwrite(&nFiles, sizeof(int),1, tarFile);
 	fputc('\0',tarFile);
 	for(i = 0; i < nFiles; i++){ //Dejamos espacio para el nombre y el entero del tamaño
 		fwrite(header[i].name, 1, strlen(header[i].name), tarFile);
 		fputc('\0',tarFile);
-		sprintf(num, "%d", header[i].size);
-		fwrite(num,1,strlen(num),tarFile);
+		fwrite(&header[i].size, sizeof(int),1,  tarFile);
 		fputc('\0',tarFile);
 	}
 	
+	free(header);
 	fclose(tarFile);
 
 	return 0;
@@ -211,34 +258,39 @@ createTar(int nFiles, char *fileNames[], char tarName[])
 int
 extractTar(char tarName[])
 {
-	FILE *tarFile = fopen(tarName,"r");
+	FILE *tarFile, *f;
+	if((tarFile = fopen(tarName,"r")) == NULL){
+		printf("The file %s doesn't exist\n", tarName);	
+		return EXIT_FAILURE;
+	}
+
 	int nFiles, i=0;
 	stHeaderEntry *header;
 	
 	readHeader(tarFile, &header, &nFiles);
-	
+
 	for (i=0; i < nFiles; i++)
 	{
-		FILE * f = fopen(header[i].name, "w");
-		copynFile(tarFile, f, header[i].size);
+		f = fopen(header[i].name, "w");
+		if((copynFile(tarFile, f, header[i].size)) != header[i].size){
+			fclose(f);
+			printf("The %s file has been copied incorrectly", header[i].name);	
+			return EXIT_FAILURE;
+		}
+
 		fclose(f);
 	}
-
+	
 	fclose(tarFile);
 	return 0;
 }
 
 int leerNum (FILE * f)
 {
-	int n=0;
-	char c;
-	c = fgetc(f);
+	int n;
 
-	while(c!='\0')
-	{
-		n = n*10 + (int)(c-48);
-		c = fgetc(f);
-	}
-	printf("%d\n",n);
+	fread(&n, sizeof(int), 1, f);
+	fseek(f, 1, SEEK_CUR);
+	
 	return n;
 }
