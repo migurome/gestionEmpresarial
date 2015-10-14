@@ -21,18 +21,23 @@ extern char *use;
 int
 copynFile(FILE * origin, FILE * destination, int nBytes)
 {
-	char buf;
+	char buf, *buffer;
 	int n = 0;
 	
-	buf = getc(origin);
+	buffer=(char *)malloc(nBytes+1);
+	fread(buffer, nBytes, 1, origin);
+	fwrite(buffer, nBytes, 1, destination);
+	free(buffer);
+	
+	/*buf = getc(origin);
 	while ((n < nBytes) && (buf != EOF)){
 		putc(buf, destination);
 		n++;
 		buf = getc(origin);
 	}
 	fseek(origin, -1, SEEK_CUR);
-	
-	return n;
+	*/
+	return nBytes;
 }
 
 /** Loads a string from a file.
@@ -173,10 +178,9 @@ createTar(int nFiles, char *fileNames[], char tarName[])
 
 
 	FILE *tarFile = fopen(tarName,"w"), *f;
-	char num[100];
 	stHeaderEntry *header = (stHeaderEntry*)malloc(nFiles * sizeof(stHeaderEntry));		// Reservamos espacio para las cabeceras
 	int i;
-	char caracter;
+	char caracter, *buffer;
 
 
 	for(i = 0; i < nFiles; i++){								// Intentamos abrir todos los archivos metidos como parametros, en caso de que  
@@ -212,14 +216,30 @@ createTar(int nFiles, char *fileNames[], char tarName[])
 			
 		FILE *fichero = fopen(fileNames[i], "r"); 	
 		
-		caracter = fgetc(fichero);					
-		tam = 0;							
-		while(caracter != EOF){
+		fseek(fichero, 0, SEEK_END);
+		header[i].size = ftell(fichero);
+		fseek(fichero, 0, SEEK_SET);
+		
+		buffer=(char *)malloc(header[i].size+1);
+		fread(buffer, header[i].size, 1, fichero);
+		fwrite(buffer, header[i].size, 1, tarFile);
+		free(buffer);
+		
+		//caracter = fgetc(fichero);					
+		//tam = 0;							
+		/*while(caracter != EOF){
 			fputc(caracter, tarFile);
 			caracter = fgetc(fichero);					
 			tam++;
-		}
-		header[i].size = tam;	
+		}*/
+		//header[i].size = tam;	
+		//header[i].size = fread(buffer, MAX_FILE_SIZE, 1, fichero);
+		//fwrite(buffer, MAX_FILE_SIZE,1, tarFile);
+		
+		
+		
+		
+		
 		fclose(fichero);
 	}
 	//VOLVEMOS A PONER EL CURSOR AL COMIENZO
@@ -271,10 +291,11 @@ extractTar(char tarName[])
 
 	for (i=0; i < nFiles; i++)
 	{
+		printf("%s\t%d\n", header[i].name, header[i].size);
 		f = fopen(header[i].name, "w");
 		if((copynFile(tarFile, f, header[i].size)) != header[i].size){
 			fclose(f);
-			printf("The %s file has been copied incorrectly", header[i].name);	
+			printf("The %s file has been copied incorrectly\n", header[i].name);	
 			return EXIT_FAILURE;
 		}
 
