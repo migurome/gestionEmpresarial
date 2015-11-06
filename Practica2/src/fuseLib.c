@@ -493,6 +493,7 @@ static int my_unlink(const char *path){
 
 
 struct fuse_operations myFS_operations = {
+	.unlink		= my_unlink,
 	.getattr	= my_getattr,					// Obtain attributes from a file
 	.readdir	= my_readdir,					// Read directory entries
 	.truncate	= my_truncate,					// Modify the size of a file
