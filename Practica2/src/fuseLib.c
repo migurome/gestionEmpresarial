@@ -500,19 +500,29 @@ static int my_unlink(const char *path){
 }
 
 static int my_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+
+	//Crear el buffer con el tamaño máximo de bloque
 	char buffer[BLOCK_SIZE_BYTES];
-	int bytes2Read=size, totalRead=0;
+
+	// Size el es tamaño que se va a leer, viene en la llamada
+	int bytes2Read = size, totalRead=0;
+
+
+	//fi->fh = myFileSystem.directory.files[idxDir].nodeIdx; Obtenemos el ínidice del nodo.
 	NodeStruct *node = myFileSystem.nodes[fi->fh];
+	
 	fprintf(stderr, "--->>>my_read: path %s, size %zu, offset %jd, fh %"PRIu64"\n", path, size, (intmax_t)offset, fi->fh);
 
-		//Leemos los datos
+	//Comienza la lectura de DATOS del fichero
 	while(bytes2Read){
 
 
 		int i;
 		int currentBlock, offBloque;
-		currentBlock = node->blocks[offset / BLOCK_SIZE_BYTES];
+		currentBlock = node -> blocks[offset / BLOCK_SIZE_BYTES];
+		// offset te permite calcular el bloque que estás leyendo, ya que offset trae el número de bloques en bytes
 		offBloque = offset % BLOCK_SIZE_BYTES;
+
 
 		if ( (lseek(myFileSystem.fdVirtualDisk, currentBlock * BLOCK_SIZE_BYTES, SEEK_SET) == (off_t) - 1)  ||
 				read(myFileSystem.fdVirtualDisk, &buffer, BLOCK_SIZE_BYTES) == -1){
@@ -520,14 +530,14 @@ static int my_read(const char *path, char *buf, size_t size, off_t offset, struc
 				return -EIO;
 		}
 
-		for(i=offBloque; (i<BLOCK_SIZE_BYTES) && (totalRead<size); i++){
+		for(i = offBloque; (i < BLOCK_SIZE_BYTES) && (totalRead < size); i++){
 			buf[totalRead++]=buffer[i];
 		}
-
 			//Descontamos lo leido
-			bytes2Read-=i;
-			offset+=i;
+			bytes2Read -= i;
+			offset += i;
 		}
+		
 		//Actualizamos el tiempo de modificacion
 		node->modificationTime = time(NULL);
 
