@@ -306,6 +306,7 @@ static int my_open(const char *path, struct fuse_file_info *fi) {
  * @param fi FUSE structure linked to the opened file
  * @return 0 on success and <0 on error
  **/
+
 static int my_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	char buffer[BLOCK_SIZE_BYTES];
 	int bytes2Write = size, totalWrite = 0;
@@ -498,24 +499,43 @@ static int my_unlink(const char *path){
 	return 0;
 }
 
-static int my_read(const char *path, struct fuse_file_info *fi) {
-	int idxDir;
+static int my_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	char buffer[BLOCK_SIZE_BYTES];
+	int bytes2Read=size, totalRead=0;
+	NodeStruct *node = myFileSystem.nodes[fi->fh];
+	fprintf(stderr, "--->>>my_read: path %s, size %zu, offset %jd, fh %"PRIu64"\n", path, size, (intmax_t)offset, fi->fh);
 
-	fprintf(stderr, "--->>>my_read: path %s, flags %d, %"PRIu64"\n", path, fi->flags, fi->fh);
-
-	//if(findFileByName(path, &idxNodoI)){
-	if((idxDir = findFileByName(&myFileSystem, (char *)path + 1)) == -1) {
-		return -ENOENT;
-	}
-
-	// Save the inode number in file handler to be used in the following calls
-	fi->fh = myFileSystem.directory.files[idxDir].nodeIdx;
-
-	//Suelta mierda por la consola de eclipse
-	fprintf(stdout, "Tu vieja la coneja, Tu vieja la coneja, Tu vieja la coneja, Tu vieja la coneja, Tu vieja la coneja, ");
+		//Leemos los datos
+	while(bytes2Read){
 
 
-	return 0;
+		int i;
+		int currentBlock, offBloque;
+		currentBlock = node->blocks[offset / BLOCK_SIZE_BYTES];
+		offBloque = offset % BLOCK_SIZE_BYTES;
+
+		if ( (lseek(myFileSystem.fdVirtualDisk, currentBlock * BLOCK_SIZE_BYTES, SEEK_SET) == (off_t) - 1)  ||
+				read(myFileSystem.fdVirtualDisk, &buffer, BLOCK_SIZE_BYTES) == -1){
+				perror("Falló lseek/read en my_read");
+				return -EIO;
+		}
+
+		for(i=offBloque; (i<BLOCK_SIZE_BYTES) && (totalRead<size); i++){
+			buf[totalRead++]=buffer[i];
+		}
+
+			//Descontamos lo leido
+			bytes2Read-=i;
+			offset+=i;
+		}
+		//Actualizamos el tiempo de modificacion
+		node->modificationTime = time(NULL);
+
+		/// Guardamos en disco el contenido de las estructuras modificadas
+		updateNode(&myFileSystem, fi->fh, node);
+		sync();
+
+		return size;
 }
 
 struct fuse_operations myFS_operations = {
@@ -529,4 +549,3 @@ struct fuse_operations myFS_operations = {
 	.release	= my_release,					// Close an opened file
 	.mknod		= my_mknod,						// Create a new file
 };
-
