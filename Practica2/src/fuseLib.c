@@ -483,7 +483,8 @@ static int my_unlink(const char *path){
 	int idxNode  = myFileSystem.directory.files[idxFile].nodeIdx;
 	if(resizeNode(idxNode, 0) < 0)
 			return -EIO;
-		
+
+
 	myFileSystem.directory.files[idxFile].freeFile = true;
 	// Queda actualizar freeFile (true)
 	myFileSystem.directory.numFiles--;
@@ -497,13 +498,33 @@ static int my_unlink(const char *path){
 	return 0;
 }
 
+static int my_read(const char *path, struct fuse_file_info *fi) {
+	int idxDir;
+
+	fprintf(stderr, "--->>>my_read: path %s, flags %d, %"PRIu64"\n", path, fi->flags, fi->fh);
+
+	//if(findFileByName(path, &idxNodoI)){
+	if((idxDir = findFileByName(&myFileSystem, (char *)path + 1)) == -1) {
+		return -ENOENT;
+	}
+
+	// Save the inode number in file handler to be used in the following calls
+	fi->fh = myFileSystem.directory.files[idxDir].nodeIdx;
+
+	//Suelta mierda por la consola de eclipse
+	fprintf(stdout, "Tu vieja la coneja, Tu vieja la coneja, Tu vieja la coneja, Tu vieja la coneja, Tu vieja la coneja, ");
+
+
+	return 0;
+}
 
 struct fuse_operations myFS_operations = {
+	.read		= my_read,
 	.unlink		= my_unlink,
 	.getattr	= my_getattr,					// Obtain attributes from a file
 	.readdir	= my_readdir,					// Read directory entries
 	.truncate	= my_truncate,					// Modify the size of a file
-	.open		= my_open,						// Oeen a file
+	.open		= my_open,						// Open a file
 	.write		= my_write,						// Write data into a file already opened
 	.release	= my_release,					// Close an opened file
 	.mknod		= my_mknod,						// Create a new file
