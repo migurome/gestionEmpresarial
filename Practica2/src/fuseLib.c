@@ -483,10 +483,16 @@ static int my_unlink(const char *path){
 	int idxNode  = myFileSystem.directory.files[idxFile].nodeIdx;
 	if(resizeNode(idxNode, 0) < 0)
 			return -EIO;
+		
+	myFileSystem.directory.files[idxFile].freeFile = true;
 	// Queda actualizar freeFile (true)
+	myFileSystem.directory.numFiles--;
 	// Queda actualizar numFiles (--)
+	myFileSystem.numFreeNodes++;
 	// Queda actuaizar numFreeNodes (++)
+	myFileSystem.nodes[idxNode]->freeNode = true;
 	// Queda actuaizar freeNode
+	updateDirectory(&myFileSystem);
 	// Escribir en el virtual-disk con todos los updates
 	return 0;
 }
