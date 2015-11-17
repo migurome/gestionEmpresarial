@@ -1,5 +1,4 @@
 #include "fuseLib.h"
-
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -482,6 +481,7 @@ static int my_unlink(const char *path){
 		return -ENOENT; //fichero no encontrado
 
 	int idxNode  = myFileSystem.directory.files[idxFile].nodeIdx;
+	
 	if(resizeNode(idxNode, 0) < 0)
 			return -EIO;
 
@@ -518,7 +518,8 @@ static int my_read(const char *path, char *buf, size_t size, off_t offset, struc
 
 
 		int i;
-		int currentBlock, offBloque;
+		int currentBlock, offBloque; //Bloque actual y final de bloque
+		//Esto es para empezar por el primer bloque
 		currentBlock = node -> blocks[offset / BLOCK_SIZE_BYTES];
 		// offset te permite calcular el bloque que estás leyendo, ya que offset trae el número de bloques en bytes
 		offBloque = offset % BLOCK_SIZE_BYTES;
