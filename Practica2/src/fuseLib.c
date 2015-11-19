@@ -508,7 +508,7 @@ static int my_read(const char *path, char *buf, size_t size, off_t offset, struc
 	int bytes2Read = size, totalRead=0;
 
 
-	//fi->fh = myFileSystem.directory.files[idxDir].nodeIdx; Obtenemos el ínidice del nodo.
+	//fi->fh = myFileSystem.directory.files[idxDir].nodeIdx; Obtenemos el nodo a partir de de la cabecera de archivo (fh).
 	NodeStruct *node = myFileSystem.nodes[fi->fh];
 	
 	fprintf(stderr, "--->>>my_read: path %s, size %zu, offset %jd, fh %"PRIu64"\n", path, size, (intmax_t)offset, fi->fh);
@@ -518,24 +518,27 @@ static int my_read(const char *path, char *buf, size_t size, off_t offset, struc
 
 
 		int i;
-		int currentBlock, offBloque; //Bloque actual y final de bloque
-		//Esto es para empezar por el primer bloque
+		int currentBlock, offBloque; //Bloque actual y desplazamiento en el bloque (donde acabamos de leer la vez anterior)
+		//Esto es para obtener el bloque en el cual leer
 		currentBlock = node -> blocks[offset / BLOCK_SIZE_BYTES];
-		// offset te permite calcular el bloque que estás leyendo, ya que offset trae el número de bloques en bytes
+		//offset es el desplazamiento en el bloque, 0 al inicio de la lectura siempre
+		//Obtenemos el deslazamiento en el bloque que vamos a leer, 0 al inicio de la lectura
 		offBloque = offset % BLOCK_SIZE_BYTES;
 
-
+		//Desplazamos el cursor al inicio del bloque a leer y leemos el bloque para almacenarlo en buffer
 		if ( (lseek(myFileSystem.fdVirtualDisk, currentBlock * BLOCK_SIZE_BYTES, SEEK_SET) == (off_t) - 1)  ||
 				read(myFileSystem.fdVirtualDisk, &buffer, BLOCK_SIZE_BYTES) == -1){
 				perror("Falló lseek/read en my_read");
 				return -EIO;
 		}
 
+		//Copiamos en buff desde donde nos quedamos en la anterior lectura (offBloque) hasta leer un bloque completo o acabar el archivo
 		for(i = offBloque; (i < BLOCK_SIZE_BYTES) && (totalRead < size); i++){
 			buf[totalRead++]=buffer[i];
 		}
 			//Descontamos lo leido
 			bytes2Read -= i;
+			//Añadir lo leido al desplazamiento del archivo, lo que vendria siendo el cursor hostia ya!!
 			offset += i;
 		}
 		

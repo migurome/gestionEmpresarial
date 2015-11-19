@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MPOINT="./mount-point"
-TEMPDIR="./temp"
+TEMPDIR="./temporal"
 FILE1="./src/fuseLib.c"
 FILE1NAME="fuseLib.c"
 FILE2="./src/myFS.h"
