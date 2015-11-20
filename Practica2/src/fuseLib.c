@@ -181,7 +181,7 @@ static int my_getattr(const char *path, struct stat *stbuf) {
 		node = myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx];
 		stbuf->st_size = node->fileSize;
 		stbuf->st_mode = S_IFREG | 0644;
-		stbuf->st_nlink = 1;
+		stbuf->st_nlink = node->nlinks;
 		stbuf->st_uid = getuid();
 		stbuf->st_gid = getgid();
 		stbuf->st_mtime = stbuf->st_ctime = node->modificationTime;
@@ -437,6 +437,7 @@ static int my_mknod(const char *path, mode_t mode, dev_t device) {
 	myFileSystem.nodes[idxNodoI]->numBlocks = 0;
 	myFileSystem.nodes[idxNodoI]->modificationTime = time(NULL);
 	myFileSystem.nodes[idxNodoI]->freeNode = false;
+	myFileSystem.nodes[idxNodoI]->nlinks = 1;
 
 	reserveBlocksForNodes(&myFileSystem, myFileSystem.nodes[idxNodoI]->blocks, 0);
 
@@ -485,19 +486,64 @@ static int my_unlink(const char *path){
 	if(resizeNode(idxNode, 0) < 0)
 			return -EIO;
 
-
+	myFileSystem.nodes[idxNode]->nlinks--;
 	myFileSystem.directory.files[idxFile].freeFile = true;
 	// Queda actualizar freeFile (true)
 	myFileSystem.directory.numFiles--;
 	// Queda actualizar numFiles (--)
-	myFileSystem.numFreeNodes++;
-	// Queda actuaizar numFreeNodes (++)
-	myFileSystem.nodes[idxNode]->freeNode = true;
-	// Queda actuaizar freeNode
+
+	if(myFileSystem.nodes[idxNode]->nlinks == 0){
+
+		myFileSystem.numFreeNodes++;
+		// Queda actuaizar numFreeNodes (++)
+		myFileSystem.nodes[idxNode]->freeNode = true;
+		// Queda actuaizar freeNode
+		updateNode(&myFileSystem, idxNode, myFileSystem.nodes[idxNode]);
+	}
+
+	updateSuperBlock(&myFileSystem);
+	updateBitmap(&myFileSystem);
 	updateDirectory(&myFileSystem);
-	// Escribir en el virtual-disk con todos los updates
+			// Escribir en el virtual-disk con todos los updates
+
 	return 0;
 }
+
+static int my_link(const char *path, const char *lpath){
+
+	fprintf(stderr,"-----> my_link, path %s, lpath %s\n", path,lpath);
+	int idxFile = findFileByName(&myFileSystem, (char*)path+1);
+
+	if(idxFile== -1)
+		return -ENOENT; //fichero no encontrado
+
+	int idxNode  = myFileSystem.directory.files[idxFile].nodeIdx;
+
+	if(resizeNode(idxNode, 0) < 0)
+			return -EIO;
+
+	int idxDir;
+		if((idxDir = findFreeFile(&myFileSystem)) == -1) {
+			return -ENOSPC;
+		}
+
+	// Update root folder
+		myFileSystem.directory.files[idxDir].freeFile = false;
+		myFileSystem.directory.numFiles++;
+		strcpy(myFileSystem.directory.files[idxDir].fileName, lpath + 1);
+		myFileSystem.directory.files[idxDir].nodeIdx = idxNode;
+
+		myFileSystem.nodes[idxNode]->modificationTime = time(NULL);
+		myFileSystem.nodes[idxNode]->nlinks++;
+
+
+
+		updateNode(&myFileSystem, idxNode, myFileSystem.nodes[idxNode]);
+		updateDirectory(&myFileSystem);
+
+	return 0;
+}
+
 
 static int my_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 
@@ -553,6 +599,7 @@ static int my_read(const char *path, char *buf, size_t size, off_t offset, struc
 }
 
 struct fuse_operations myFS_operations = {
+	.link		= my_link,
 	.read		= my_read,
 	.unlink		= my_unlink,
 	.getattr	= my_getattr,					// Obtain attributes from a file

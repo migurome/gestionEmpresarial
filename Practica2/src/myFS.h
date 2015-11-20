@@ -44,6 +44,7 @@ typedef struct DirectoryStructure {
 typedef struct NodeStructure {
 	int numBlocks;                        		// Num blocks
 	int fileSize;                        		// File size
+	int nlinks;
 	time_t modificationTime;              		// Modification time
 	DISK_LBA blocks[MAX_BLOCKS_PER_FILE];		// Blocks
 	BOOLEAN freeNode;                        	// If the node is available
