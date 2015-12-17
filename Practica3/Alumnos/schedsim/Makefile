@@ -1,6 +1,6 @@
 #!/usr/bin/make
 TARGET=schedsim
-SOURCES=main.c sched.c slist.c barrier.c  sched_rr.c sched_sjf.c 
+SOURCES=main.c sched.c slist.c barrier.c  sched_rr.c sched_sjf.c sched_fcfs.c 
 
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 MY_INCLUDES=.
@@ -9,7 +9,6 @@ OS=$(shell uname)
 LDFLAGS=-lpthread
 #CFLAGS=-g -Wall 
 CFLAGS=-g -Wall -DPOSIX_BARRIER
-
 all: $(TARGET)
 	
 $(TARGET): $(OBJECTS)
@@ -24,6 +23,7 @@ $(TARGET): $(OBJECTS)
 	
 clean:
 	rm -f *.o
+	rm -f $(TARGET)
 	rm -f  *~
 	
 

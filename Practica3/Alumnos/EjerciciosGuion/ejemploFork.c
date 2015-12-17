@@ -36,11 +36,11 @@ int main() {
 		else if (pid==0) {
 			//Child
 
-#ifdef EXERCISE_OPEN
+//#ifdef EXERCISE_OPEN
 			fd=open("fich.txt",O_CREAT | O_RDWR ,0666);
 			file_desc = fdopen(fd,"r+");
 			setvbuf(file_desc,(char*)NULL,_IOLBF, 0);
-#endif
+//#endif
 			strcat(tab,"\t\0");
 			
 			a_global+=2; b_local+=2; (*p_heap) +=2;
