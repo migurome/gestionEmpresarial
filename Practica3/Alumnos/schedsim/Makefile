@@ -23,7 +23,7 @@ $(TARGET): $(OBJECTS)
 	
 clean:
 	rm -f *.o
-	rm -f $(TARGET)
+#	rm -f $(TARGET)
 	rm -f  *~
 	
 
