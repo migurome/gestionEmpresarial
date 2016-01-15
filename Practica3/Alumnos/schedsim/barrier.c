@@ -61,7 +61,7 @@ int sys_barrier_wait(sys_barrier_t *barrier)
        
         ... To be completed ....  
     */
-/*
+
     pthread_mutex_lock(&barrier->mutex);  // echa el cerrojo
     ++(barrier->nr_threads_arrived[0]);  //incrementar el numero de CPUS
     
@@ -75,7 +75,7 @@ int sys_barrier_wait(sys_barrier_t *barrier)
       pthread_cond_wait(&barrier->cond, &(barrier-> mutex));
       pthread_mutex_unlock(&barrier->mutex);
     }
-    */
+    
     return 0;
 }
 
