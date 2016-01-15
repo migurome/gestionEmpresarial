@@ -52,7 +52,7 @@ mkdir ./resultados
 
 
 # Declaramos una lista con todos los Schedulers
-listaDeSchedulersDisponibles=("RR" "SJF" "FCFS" "PRIO")
+listaDeSchedulersDisponibles=("LOTE")
 
 for nameSched in ${listaDeSchedulersDisponibles[@]} 
 do
@@ -62,13 +62,12 @@ do
 	
 	# Se ejecutan los schedulers para el ejemplo introducido por el usuario
 	echo " "
-	echo "##############################################################"
-	echo "##############################################################"
+	echo "--------------------------------------------------------------"
 	echo " "
 	echo "Se va a ejecutar" $ejemplo "con el planificador" $nameSched "con" $cpus "CPUs"
 	echo " "
 	
-		./schedsim/schedsim -n $cpus -i schedsim/examples/$ejemplo -s $nameSched
+		./schedsim/schedsim -n $cpus -i schedsim/examples/$ejemplo -s $nameSched -q 3
 		
 	# Añadimos una pausa para comprobar que lo ha ejecutado bien
 	read -p "Presiona [Enter] para continuar..."

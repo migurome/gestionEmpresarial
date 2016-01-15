@@ -1,0 +1,128 @@
+(t0): New task P1
+(t0): New task P3
+(t0): P1 running
+(t1): New task P2
+(t1): New task P4
+(t0): Context switch (P1)<->(P3)
+(t1): P3 running
+(t1): Context switch (P3)<->(P2)
+(t2): P2 running
+(t3): Task P2 goes to sleep until (t5)
+(t2): Context switch (P2)<->(P4)
+(t3): P4 running
+(t3): Context switch (P4)<->(P1)
+(t4): P1 running
+(t5): task P2 awoken
+(t4): Context switch (P1)<->(P3)
+(t5): P3 running
+(t5): Context switch (P3)<->(P4)
+(t6): P4 running
+(t6): Context switch (P4)<->(P2)
+(t7): P2 running
+(t7): Context switch (P2)<->(P1)
+(t8): P1 running
+(t9): Task P1 goes to sleep until (t14)
+(t8): Context switch (P1)<->(P3)
+(t9): P3 running
+(t10): Task P3 goes to sleep until (t15)
+(t9): Context switch (P3)<->(P4)
+(t10): P4 running
+(t11): Task P4 goes to sleep until (t16)
+(t10): Context switch (P4)<->(P2)
+(t11): P2 running
+(t12): P2 running
+(t13): P2 running
+(t14): task P1 awoken
+(t13): Context switch (P2)<->(P1)
+(t14): P1 running
+(t15): task P3 awoken
+(t14): Context switch (P1)<->(P2)
+(t15): P2 running
+(t16): task P4 awoken
+(t15): Context switch (P2)<->(P3)
+(t16): P3 running
+(t16): Context switch (P3)<->(P1)
+(t17): P1 running
+(t17): Context switch (P1)<->(P4)
+(t18): P4 running
+(t18): Context switch (P4)<->(P2)
+(t19): P2 running
+(t19): Context switch (P2)<->(P3)
+(t20): P3 running
+(t20): Context switch (P3)<->(P1)
+(t21): P1 running
+(t21): Context switch (P1)<->(P4)
+(t22): P4 running
+(t22): Context switch (P4)<->(P3)
+(t23): P3 running
+(t23): Context switch (P3)<->(P1)
+(t24): P1 running
+(t25): Task P1 goes to sleep until (t26)
+(t24): Context switch (P1)<->(P4)
+(t25): P4 running
+(t25): Context switch (P4)<->(P3)
+(t26): P3 running
+(t27): Task P3 goes to sleep until (t28)
+(t26): Context switch (P3)<->(P4)
+(t27): P4 running
+(t28): Task P4 goes to sleep until (t29)
+(t27): Context switch (P4)<->(idle)
+(t28): idle running
+==================
+P1	0	1	running
+P1	1	4	ready
+P1	4	5	running
+P1	5	8	ready
+P1	8	9	running
+P1	9	14	I/O
+P1	14	15	running
+P1	15	17	ready
+P1	17	18	running
+P1	18	21	ready
+P1	21	22	running
+P1	22	24	ready
+P1	24	25	running
+P1	25	26	I/O
+P2	1	2	ready
+P2	2	3	running
+P2	3	5	I/O
+P2	5	7	ready
+P2	7	8	running
+P2	8	11	ready
+P2	11	14	running
+P2	14	15	ready
+P2	15	16	running
+P2	16	19	ready
+P2	19	20	running
+P3	0	1	ready
+P3	1	2	running
+P3	2	5	ready
+P3	5	6	running
+P3	6	9	ready
+P3	9	10	running
+P3	10	15	I/O
+P3	15	16	ready
+P3	16	17	running
+P3	17	20	ready
+P3	20	21	running
+P3	21	23	ready
+P3	23	24	running
+P3	24	26	ready
+P3	26	27	running
+P3	27	28	I/O
+P4	1	3	ready
+P4	3	4	running
+P4	4	6	ready
+P4	6	7	running
+P4	7	10	ready
+P4	10	11	running
+P4	11	16	I/O
+P4	16	18	ready
+P4	18	19	running
+P4	19	22	ready
+P4	22	23	running
+P4	23	25	ready
+P4	25	26	running
+P4	26	27	ready
+P4	27	28	running
+P4	28	29	I/O
